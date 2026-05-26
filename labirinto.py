@@ -232,3 +232,62 @@ while gioco_attivo:
 
     for mostro in lista_mostri:
         mostro.aggiorna(muri, giocatore_rect, invisibilita_attiva)
+
+           for moneta in monete[:]:
+        if giocatore_rect.colliderect(moneta):
+            monete.remove(moneta)
+            monete_totali += 1
+
+    if chiave_rect and giocatore_rect.colliderect(chiave_rect):
+        ha_chiave = True
+        chiave_rect = None
+
+    for mostro in lista_mostri:
+        if giocatore_rect.colliderect(mostro.rect):
+            if not invisibilita_attiva:
+                print("👾 Catturato! Protezione attiva: i bot vengono allontanati dallo spawn.")
+                giocatore_rect.x = giocatore_rect.y = 1 * DIMENSIONE_CELLA + 6
+                for m in lista_mostri: m.reset_posizione()
+                break 
+            else:
+                mostro.cambia_direzione()
+                mostro.rect.x += mostro.dx * 8
+                mostro.rect.y += mostro.dy * 8
+
+    if giocatore_rect.colliderect(uscita_rect):
+        if ha_chiave and monete_totali >= monete_necessarie:
+            livello_attuale += 1
+            vecchie_righe, vecchie_colonne = dimensione_mappa
+            dimensione_mappa = (vecchie_righe + 2, vecchie_colonne + 2)
+            ha_chiave = False
+            schermo, mappa, muri, monete, chiave_rect, uscita_rect, lista_mostri, giocatore_rect, monete_necessarie, ha_chiave = avvia_livello(livello_attuale, dimensione_mappa)
+        else:
+            if dx != 0: giocatore_rect.x -= dx * 2
+            if dy != 0: giocatore_rect.y -= dy * 2
+
+    # --- RENDERING GRAFICO ---
+    schermo.fill(COLORI["STRADA"])
+    for muro in muri: pygame.draw.rect(schermo, COLORI["MURO"], muro)
+    pygame.draw.rect(schermo, COLORI["USCITA"], uscita_rect)
+    if chiave_rect: pygame.draw.rect(schermo, COLORI["CHIAVE"], chiave_rect.inflate(-16, -16))
+    for moneta in monete: pygame.draw.circle(schermo, COLORI["MONETA"], moneta.center, 7)
+    for mostro in lista_mostri: pygame.draw.rect(schermo, COLORI["MOSTRO"], mostro.rect)
+    pygame.draw.rect(schermo, COLORI["INVISIBILE"] if invisibilita_attiva else COLORI["GIOCATORE"], giocatore_rect)
+
+    # BARRA HUD IN BASSO
+    altezza_interfaccia = 55
+    regione_interfaccia = pygame.Rect(0, schermo.get_height() - altezza_interfaccia, schermo.get_width(), altezza_interfaccia)
+    pygame.draw.rect(schermo, (230, 230, 230), regione_interfaccia)
+    
+    testo_info = font.render(f"Lvl: {livello_attuale} | Monete: {monete_totali}/{monete_necessarie} | Chiave: {'SÌ' if ha_chiave else 'NO'}", True, COLORI["TESTO"])
+    schermo.blit(testo_info, (10, schermo.get_height() - 48))
+    
+    testo_s1 = font.render(f"1-Scatto (Costo: 1)", True, COLORI["ATTIVO"] if scatto_attivo else COLORI["TESTO"])
+    testo_s2 = font.render(f"2-Invisibile (Costo: 2)", True, COLORI["ATTIVO"] if invisibilita_attiva else COLORI["TESTO"])
+    schermo.blit(testo_s1, (10, schermo.get_height() - 24))
+    schermo.blit(testo_s2, (160, schermo.get_height() - 24))
+
+    pygame.display.flip()
+
+pygame.quit()
+sys.exit()
