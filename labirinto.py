@@ -190,3 +190,45 @@ def avvia_livello(livello, dimensioni):
 schermo, mappa, muri, monete, chiave_rect, uscita_rect, lista_mostri, giocatore_rect, monete_necessarie, ha_chiave = avvia_livello(livello_attuale, dimensione_mappa)
 
 velocita_base, monete_totali, durata_scatto, durata_invisibilita = 4, 0, 0, 0
+
+while gioco_attivo:
+    orologio.tick(60)
+    tempo_attuale = pygame.time.get_ticks()
+    
+    for evento in pygame.event.get():
+        if evento.type == pygame.QUIT: gioco_attivo = False
+        elif evento.type == pygame.KEYDOWN:
+            if (evento.key == pygame.K_1 or evento.key == pygame.K_KP1) and monete_totali >= 1 and tempo_attuale > durata_scatto:
+                monete_totali -= 1
+                durata_scatto = tempo_attuale + 3000
+                print("⚡ Skill Scatto Attivata!")
+            if (evento.key == pygame.K_2 or evento.key == pygame.K_KP2) and monete_totali >= 2 and tempo_attuale > durata_invisibilita:
+                monete_totali -= 2
+                durata_invisibilita = tempo_attuale + 4000
+                print("👻 Skill Invisibilità Attivata!")
+
+    scatto_attivo = tempo_attuale < durata_scatto
+    invisibilita_attiva = tempo_attuale < durata_invisibilita
+    velocita_corrente = velocita_base * 2 if scatto_attivo else velocita_base
+
+    tasti = pygame.key.get_pressed()
+    dx, dy = 0, 0
+    if tasti[pygame.K_w] or tasti[pygame.K_UP]:    dy = -velocita_corrente
+    if tasti[pygame.K_s] or tasti[pygame.K_DOWN]:  dy = velocita_corrente
+    if tasti[pygame.K_a] or tasti[pygame.K_LEFT]:  dx = -velocita_corrente
+    if tasti[pygame.K_d] or tasti[pygame.K_RIGHT]: dx = velocita_corrente
+
+    giocatore_rect.x += dx
+    for muro in muri:
+        if giocatore_rect.colliderect(muro):
+            if dx > 0: giocatore_rect.right = muro.left
+            if dx < 0: giocatore_rect.left = muro.right
+
+    giocatore_rect.y += dy
+    for muro in muri:
+        if giocatore_rect.colliderect(muro):
+            if dy > 0: giocatore_rect.bottom = muro.top
+            if dy < 0: giocatore_rect.top = muro.bottom
+
+    for mostro in lista_mostri:
+        mostro.aggiorna(muri, giocatore_rect, invisibilita_attiva)
