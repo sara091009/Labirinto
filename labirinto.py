@@ -64,8 +64,11 @@ def genera_labirinto_casuale(righe, colonne):
         
     return griglia
 
-    class Mostro:
-    def _init_(self, cella_x, cella_y, velocita):
+
+class Mostro:
+
+    def __init__(self, cella_x, cella_y, velocita):
+
         self.cella_partenza_x = cella_x
         self.cella_partenza_y = cella_y
         self.rect = pygame.Rect(cella_x * DIMENSIONE_CELLA + 6, cella_y * DIMENSIONE_CELLA + 6, 28, 28)
@@ -201,16 +204,20 @@ while gioco_attivo:
             if (evento.key == pygame.K_1 or evento.key == pygame.K_KP1) and monete_totali >= 1 and tempo_attuale > durata_scatto:
                 monete_totali -= 1
                 durata_scatto = tempo_attuale + 3000
+                                # ... (Le righe sopra appartengono alla gestione eventi dentro il ciclo while) ...
                 print("⚡ Skill Scatto Attivata!")
             if (evento.key == pygame.K_2 or evento.key == pygame.K_KP2) and monete_totali >= 2 and tempo_attuale > durata_invisibilita:
+                # Allineato a 16 spazi (dentro la gestione eventi di pressione dei tasti)
                 monete_totali -= 2
                 durata_invisibilita = tempo_attuale + 4000
                 print("👻 Skill Invisibilità Attivata!")
 
+    # Variabili di stato delle skill (Allineato a 4 spazi: dentro il ciclo while)
     scatto_attivo = tempo_attuale < durata_scatto
     invisibilita_attiva = tempo_attuale < durata_invisibilita
     velocita_corrente = velocita_base * 2 if scatto_attivo else velocita_base
 
+    # Lettura degli input direzionali continui (Allineato a 4 spazi)
     tasti = pygame.key.get_pressed()
     dx, dy = 0, 0
     if tasti[pygame.K_w] or tasti[pygame.K_UP]:    dy = -velocita_corrente
@@ -218,63 +225,102 @@ while gioco_attivo:
     if tasti[pygame.K_a] or tasti[pygame.K_LEFT]:  dx = -velocita_corrente
     if tasti[pygame.K_d] or tasti[pygame.K_RIGHT]: dx = velocita_corrente
 
+    # Movimento e collisione asse X (Allineato a 4 spazi)
     giocatore_rect.x += dx
     for muro in muri:
+        # Dentro il ciclo for dei muri: 8 spazi
         if giocatore_rect.colliderect(muro):
+            # Dentro l'if di collisione della X: 12 spazi
             if dx > 0: giocatore_rect.right = muro.left
             if dx < 0: giocatore_rect.left = muro.right
 
+    # Movimento e collisione asse Y (Allineato a 4 spazi)
     giocatore_rect.y += dy
     for muro in muri:
+        # Dentro il ciclo for dei muri: 8 spazi
         if giocatore_rect.colliderect(muro):
+            # Dentro l'if di collisione della Y: 12 spazi
             if dy > 0: giocatore_rect.bottom = muro.top
             if dy < 0: giocatore_rect.top = muro.bottom
 
+    # Aggiornamento IA dei nemici (Allineato a 4 spazi)
     for mostro in lista_mostri:
+        # Dentro il ciclo for dei mostri: 8 spazi
         mostro.aggiorna(muri, giocatore_rect, invisibilita_attiva)
 
-           for moneta in monete[:]:
+    # 🔍 CORREZIONE INTERAZIONI MONETE (Allineato a 4 spazi: sistemati gli spazi errati in eccesso)
+    for moneta in monete[:]:
+        # Dentro il ciclo for delle monete: 8 spazi
         if giocatore_rect.colliderect(moneta):
+            # Dentro l'if di collisione moneta: 12 spazi
             monete.remove(moneta)
             monete_totali += 1
 
+    # Raccolta Chiave Blu (Allineato a 4 spazi)
     if chiave_rect and giocatore_rect.colliderect(chiave_rect):
+        # Dentro l'if della chiave: 8 spazi
         ha_chiave = True
         chiave_rect = None
 
+    # Controllo Collisioni con Mostri (Allineato a 4 spazi)
     for mostro in lista_mostri:
+        # Dentro il ciclo for dei mostri: 8 spazi
         if giocatore_rect.colliderect(mostro.rect):
+            # Dentro la collisione con il mostro: 12 spazi
             if not invisibilita_attiva:
+                # Se non sei invisibile (Reset con protezione spawn): 16 spazi
                 print("👾 Catturato! Protezione attiva: i bot vengono allontanati dallo spawn.")
-                giocatore_rect.x = giocatore_rect.y = 1 * DIMENSIONE_CELLA + 6
-                for m in lista_mostri: m.reset_posizione()
+                giocatore_rect.x = 1 * DIMENSIONE_CELLA + 6
+                giocatore_rect.y = 1 * DIMENSIONE_CELLA + 6
+                for m in lista_mostri:
+                    # Rientrato dentro l'if di reset: 20 spazi
+                    m.reset_posizione()
                 break 
             else:
+                # Se sei invisibile (Mostro respinto): 16 spazi
                 mostro.cambia_direzione()
                 mostro.rect.x += mostro.dx * 8
                 mostro.rect.y += mostro.dy * 8
 
+    # Controllo Uscita Verde (Allineato a 4 spazi)
     if giocatore_rect.colliderect(uscita_rect):
+        # Dentro il controllo dell'uscita: 8 spazi
         if ha_chiave and monete_totali >= monete_necessarie:
+            # Livello superato con successo: 12 spazi
             livello_attuale += 1
             vecchie_righe, vecchie_colonne = dimensione_mappa
             dimensione_mappa = (vecchie_righe + 2, vecchie_colonne + 2)
             ha_chiave = False
             schermo, mappa, muri, monete, chiave_rect, uscita_rect, lista_mostri, giocatore_rect, monete_necessarie, ha_chiave = avvia_livello(livello_attuale, dimensione_mappa)
         else:
+            # Bloccato se mancano i requisiti: 12 spazi
             if dx != 0: giocatore_rect.x -= dx * 2
             if dy != 0: giocatore_rect.y -= dy * 2
 
-    # --- RENDERING GRAFICO ---
+    # --- RENDERING GRAFICO --- (Allineato a 4 spazi)
     schermo.fill(COLORI["STRADA"])
-    for muro in muri: pygame.draw.rect(schermo, COLORI["MURO"], muro)
+    
+    for muro in muri:
+        # Dentro il ciclo for dei muri: 8 spazi
+        pygame.draw.rect(schermo, COLORI["MURO"], muro)
+        
     pygame.draw.rect(schermo, COLORI["USCITA"], uscita_rect)
-    if chiave_rect: pygame.draw.rect(schermo, COLORI["CHIAVE"], chiave_rect.inflate(-16, -16))
-    for moneta in monete: pygame.draw.circle(schermo, COLORI["MONETA"], moneta.center, 7)
-    for mostro in lista_mostri: pygame.draw.rect(schermo, COLORI["MOSTRO"], mostro.rect)
+
+    if chiave_rect:
+        # Dentro il controllo della chiave: 8 spazi
+        pygame.draw.rect(schermo, COLORI["CHIAVE"], chiave_rect.inflate(-16, -16))
+        
+    for moneta in monete:
+        # Dentro il ciclo for delle monete: 8 spazi
+        pygame.draw.circle(schermo, COLORI["MONETA"], moneta.center, 7)
+        
+    for mostro in lista_mostri:
+        # Dentro il ciclo for dei mostri: 8 spazi
+        pygame.draw.rect(schermo, COLORI["MOSTRO"], mostro.rect)
+        
     pygame.draw.rect(schermo, COLORI["INVISIBILE"] if invisibilita_attiva else COLORI["GIOCATORE"], giocatore_rect)
 
-    # BARRA HUD IN BASSO
+    # BARRA HUD IN BASSO (Allineato a 4 spazi)
     altezza_interfaccia = 55
     regione_interfaccia = pygame.Rect(0, schermo.get_height() - altezza_interfaccia, schermo.get_width(), altezza_interfaccia)
     pygame.draw.rect(schermo, (230, 230, 230), regione_interfaccia)
@@ -289,5 +335,6 @@ while gioco_attivo:
 
     pygame.display.flip()
 
+# <--- Fine del ciclo "while gioco_attivo" (Il codice torna completamente a inizio riga)
 pygame.quit()
 sys.exit()
