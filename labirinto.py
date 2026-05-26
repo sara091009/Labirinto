@@ -141,4 +141,52 @@ def genera_labirinto_casuale(righe, colonne):
             self.dy = 0
             self.dx = random.choice((self.velocita, -self.velocita))
 
-            
+livello_attuale = 1
+dimensione_mappa = (11, 11)
+
+def avvia_livello(livello, dimensioni):
+    righe, colonne = dimensioni
+    mappa_generata = genera_labirinto_casuale(righe, colonne)
+    
+    muri_rect, monete_rect, strade_libere, strade_per_mostri = [], [], [], []
+    uscita_rect = None
+    riga_sicurezza = righe // 2
+
+    for y in range(righe):
+        for x in range(colonne):
+            rect = pygame.Rect(x * DIMENSIONE_CELLA, y * DIMENSIONE_CELLA, DIMENSIONE_CELLA, DIMENSIONE_CELLA)
+            if mappa_generata[y][x] == "#": muri_rect.append(rect)
+            elif mappa_generata[y][x] == "E": uscita_rect = rect
+            elif mappa_generata[y][x] == "." and (x, y) not in [(1,1), (1,2), (2,1)]:
+                strade_libere.append((x, y))
+                if y > riga_sicurezza and (x, y) != (colonne-2, righe-2): strade_per_mostri.append((x, y))
+
+    random.shuffle(strade_libere)
+    random.shuffle(strade_per_mostri)
+    if not strade_per_mostri: strade_per_mostri = strade_libere.copy()
+
+    # Spacchettamento delle tuple geometriche
+    cx, cy = strade_libere.pop()
+    chiave_rect = pygame.Rect(cx * DIMENSIONE_CELLA, cy * DIMENSIONE_CELLA, DIMENSIONE_CELLA, DIMENSIONE_CELLA)
+    
+    for _ in range(3 + livello):
+        if strade_libere:
+            mx, my = strade_libere.pop()
+            monete_rect.append(pygame.Rect(mx * DIMENSIONE_CELLA, my * DIMENSIONE_CELLA, DIMENSIONE_CELLA, DIMENSIONE_CELLA))
+
+    mostri_generati = []
+    for _ in range(1 + livello):
+        if strade_per_mostri:
+            ox, oy = strade_per_mostri.pop()
+            mostri_generati.append(Mostro(ox, oy, min(2 + (livello // 2), 4)))
+
+    risoluzione = (colonne * DIMENSIONE_CELLA, (righe * DIMENSIONE_CELLA) + 55)
+    schermo_gioco = pygame.display.set_mode(risoluzione)
+    pygame.display.set_caption(f"Labirinto con Skill - Livello {livello}")
+
+    giocatore = pygame.Rect(1 * DIMENSIONE_CELLA + 6, 1 * DIMENSIONE_CELLA + 6, 28, 28)
+    return schermo_gioco, mappa_generata, muri_rect, monete_rect, chiave_rect, uscita_rect, mostri_generati, giocatore, 2 + (livello // 2), False
+
+schermo, mappa, muri, monete, chiave_rect, uscita_rect, lista_mostri, giocatore_rect, monete_necessarie, ha_chiave = avvia_livello(livello_attuale, dimensione_mappa)
+
+velocita_base, monete_totali, durata_scatto, durata_invisibilita = 4, 0, 0, 0
