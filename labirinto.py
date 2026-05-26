@@ -63,3 +63,82 @@ def genera_labirinto_casuale(righe, colonne):
     griglia[righe - 3][colonne - 2] = "."
         
     return griglia
+
+    class Mostro:
+    def _init_(self, cella_x, cella_y, velocita):
+        self.cella_partenza_x = cella_x
+        self.cella_partenza_y = cella_y
+        self.rect = pygame.Rect(cella_x * DIMENSIONE_CELLA + 6, cella_y * DIMENSIONE_CELLA + 6, 28, 28)
+        self.velocita = velocita
+        self.direzioni_possibili = ((0, self.velocita), (0, -self.velocita), (self.velocita, 0), (-self.velocita, 0))
+        self.dx, self.dy = random.choice(self.direzioni_possibili)
+        
+        self.frame_bloccato = 0
+        self.timer_stordimento_aggro = 0
+
+    def reset_posizione(self):
+        """Riporta il mostro alla sua cella di nascita e azzera il tracciamento."""
+        self.rect.x = self.cella_partenza_x * DIMENSIONE_CELLA + 6
+        self.rect.y = self.cella_partenza_y * DIMENSIONE_CELLA + 6
+        self.frame_bloccato = 0
+        self.timer_stordimento_aggro = pygame.time.get_ticks() + 1500  # Calmo per 1.5 secondi dopo il reset
+        self.cambia_direzione()
+
+    def aggiorna(self, lista_muri, giocatore_rect, invisibile):
+        tempo_attuale = pygame.time.get_ticks()
+        dist_x = giocatore_rect.centerx - self.rect.centerx
+        dist_y = giocatore_rect.centery - self.rect.centery
+        distanza = math.hypot(dist_x, dist_y)
+
+        if invisibile or tempo_attuale < self.timer_stordimento_aggro:
+            if random.randint(1, 40) == 1: self.cambia_direzione()
+        elif distanza < DIMENSIONE_CELLA * 4 and self.frame_bloccato < 10:
+            if abs(dist_x) > abs(dist_y):
+                self.dx = self.velocita if dist_x > 0 else -self.velocita
+                self.dy = 0
+            else:
+                self.dx = 0
+                self.dy = self.velocita if dist_y > 0 else -self.velocita
+        else:
+            if random.randint(1, 60) == 1: self.cambia_direzione()
+
+        is_colliding = False
+        pos_precedente = (self.rect.x, self.rect.y)
+
+        self.rect.x += self.dx
+        for muro in lista_muri:
+            if self.rect.colliderect(muro):
+                if self.dx > 0: self.rect.right = muro.left
+                if self.dx < 0: self.rect.left = muro.right
+                is_colliding = True
+
+        self.rect.y += self.dy
+        for muro in lista_muri:
+            if self.rect.colliderect(muro):
+                if self.dy > 0: self.rect.bottom = muro.top
+                if self.dy < 0: self.rect.top = muro.bottom
+                is_colliding = True
+
+        if is_colliding and (self.rect.x, self.rect.y) == pos_precedente:
+            self.frame_bloccato += 1
+            if self.frame_bloccato >= 10:
+                self.timer_stordimento_aggro = tempo_attuale + 2000
+                self.frame_bloccato = 0
+                self.cambia_direzione_laterale()
+        else:
+            if not is_colliding: self.frame_bloccato = max(0, self.frame_bloccato - 1)
+
+        if is_colliding: self.cambia_direzione_laterale()
+
+    def cambia_direzione(self):
+        self.dx, self.dy = random.choice(self.direzioni_possibili)
+
+    def cambia_direzione_laterale(self):
+        if self.dx != 0:
+            self.dx = 0
+            self.dy = random.choice((self.velocita, -self.velocita))
+        else:
+            self.dy = 0
+            self.dx = random.choice((self.velocita, -self.velocita))
+
+            
